@@ -60,8 +60,7 @@ router.post('/api/config', express.json(), async (req, res) => {
       if (raw === undefined || raw === null) continue;
       const valor = String(raw).trim();
       if (SENSITIVE_KEYS.includes(field.chave) && (valor === '' || valor.startsWith('****'))) continue;
-      if (valor === '') continue;
-      await repos.setConfig(field.chave, valor, field.tipo, field.descricao);
+      await repos.setConfig(field.chave, valor || null, field.tipo, field.descricao);
     }
 
     invalidateCache();

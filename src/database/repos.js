@@ -263,7 +263,7 @@ async function setConfig(chave, valor, tipo, descricao) {
   await query(
     `INSERT INTO configuracoes (chave, valor, tipo, descricao, updated_at)
      VALUES ($1, $2, $3, $4, NOW())
-     ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor, updated_at = NOW()`,
+     ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor, tipo = EXCLUDED.tipo, descricao = EXCLUDED.descricao, updated_at = NOW()`,
     [chave, valor, tipo || 'string', descricao || null]
   );
 }
