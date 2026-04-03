@@ -2,30 +2,31 @@
 
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const config = require('./config');
 const { router: webhookRouter } = require('./webhook/receiver');
 const adminRouter = require('./admin/routes/dashboard');
-const superadminRouter = require('./superadmin/routes/config');
 const internalRouter = require('./internal/notify');
+const agendamentoRouter = require('./routes/agendamento');
+const empresaRouter = require('./routes/empresa');
 const { iniciar } = require('./scheduler');
-const { getDbConfig } = require('./config/loader');
 
 const app = express();
 
-app.get('/', async (req, res) => {
-  try {
-    const nome = await getDbConfig('empresa_nome');
-    if (!nome) return res.redirect('/superadmin/');
-  } catch {
-  }
-  res.redirect('/admin/');
-});
-
 app.use('/webhook', webhookRouter);
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : false,
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use('/agendamento', agendamentoRouter);
+app.use('/empresa', empresaRouter);
 app.use('/admin', adminRouter);
-app.use('/superadmin', superadminRouter);
 app.use('/internal', internalRouter);
+
+app.get('/', (req, res) => res.redirect('/admin/'));
 
 app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'oficina-whatsapp' });
