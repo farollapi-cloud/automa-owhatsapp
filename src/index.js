@@ -10,6 +10,8 @@ const { iniciar } = require('./scheduler');
 
 const app = express();
 
+app.get('/', (req, res) => res.redirect('/admin/'));
+
 app.use('/webhook', webhookRouter);
 app.use(express.json());
 app.use('/admin', adminRouter);
