@@ -253,6 +253,26 @@ async function updateFilaRetryErro(id, tentativas, erro, proxima) {
   );
 }
 
+/** CONFIGURACOES */
+async function getConfig(chave) {
+  const r = await query('SELECT valor FROM configuracoes WHERE chave = $1', [chave]);
+  return r.rows[0]?.valor || null;
+}
+
+async function setConfig(chave, valor, tipo, descricao) {
+  await query(
+    `INSERT INTO configuracoes (chave, valor, tipo, descricao, updated_at)
+     VALUES ($1, $2, $3, $4, NOW())
+     ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor, updated_at = NOW()`,
+    [chave, valor, tipo || 'string', descricao || null]
+  );
+}
+
+async function getAllConfigs() {
+  const r = await query('SELECT chave, valor, tipo, descricao FROM configuracoes ORDER BY chave');
+  return r.rows;
+}
+
 /** PONTO 8 — consultas admin (estatísticas conforme documento) */
 async function adminListClientes() {
   const r = await query(
@@ -293,6 +313,9 @@ async function adminEstatisticas() {
 }
 
 module.exports = {
+  getConfig,
+  setConfig,
+  getAllConfigs,
   findClienteByTelefone,
   insertCliente,
   findClienteById,

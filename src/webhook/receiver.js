@@ -10,6 +10,7 @@ const { sendText } = require('../whatsapp/client');
 const logger = require('../utils/logger');
 const { parseWhatsAppTs } = require('../utils/formatters');
 const { setSessaoCache, invalidateSessaoCache } = require('../cache/redis');
+const { getDbConfig } = require('../config/loader');
 
 const router = express.Router();
 
@@ -17,8 +18,8 @@ function normalizeTelefone(from) {
   return String(from || '').replace(/\D/g, '');
 }
 
-function verifyMetaSignature(req) {
-  const secret = config.whatsapp.appSecret;
+async function verifyMetaSignature(req) {
+  const secret = await getDbConfig('whatsapp_app_secret', config.whatsapp.appSecret);
   if (!secret) return true;
   const sig = req.get('x-hub-signature-256');
   if (!sig || !sig.startsWith('sha256=')) return false;
@@ -32,11 +33,11 @@ function verifyMetaSignature(req) {
   }
 }
 
-router.get('/whatsapp', (req, res) => {
+router.get('/whatsapp', async (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
-  const verify = config.whatsapp.verifyToken;
+  const verify = await getDbConfig('whatsapp_verify_token', config.whatsapp.verifyToken);
   if (mode === 'subscribe' && verify && token === verify) {
     return res.status(200).send(challenge);
   }
@@ -45,7 +46,7 @@ router.get('/whatsapp', (req, res) => {
 
 router.post('/whatsapp', express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }), async (req, res) => {
   res.sendStatus(200);
-  if (!verifyMetaSignature(req)) {
+  if (!await verifyMetaSignature(req)) {
     logger.warn('webhook', 'assinatura inválida ou ausente');
     return;
   }

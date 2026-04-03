@@ -1,17 +1,25 @@
 'use strict';
 
-function menuSemAgendamento() {
+const { getDbConfig } = require('../config/loader');
+
+async function getNomeEmpresa() {
+  return (await getDbConfig('empresa_nome')) || 'Oficina do TETEU';
+}
+
+async function menuSemAgendamento() {
+  const nome = await getNomeEmpresa();
   return (
-    `*Oficina do TETEU*\n\n` +
+    `*${nome}*\n\n` +
     `1) Agendar serviço\n` +
     `2) Falar com atendente\n` +
     `3) Encerrar`
   );
 }
 
-function menuComAgendamento() {
+async function menuComAgendamento() {
+  const nome = await getNomeEmpresa();
   return (
-    `*Oficina do TETEU*\n\n` +
+    `*${nome}*\n\n` +
     `Você tem um agendamento ativo.\n\n` +
     `1) Ver dados\n` +
     `2) Reagendar\n` +
@@ -20,18 +28,28 @@ function menuComAgendamento() {
   );
 }
 
-function slotsHorario() {
-  return (
-    `Escolha o horário (número):\n\n` +
-    `1) Segunda 08:00\n` +
-    `2) Segunda 14:00\n` +
-    `3) Terça 09:00\n` +
-    `4) Quarta 10:00\n` +
-    `5) Quinta 11:00`
-  );
+async function slotsHorario() {
+  let horarios = null;
+  try {
+    const raw = await getDbConfig('horarios');
+    if (raw) horarios = JSON.parse(raw);
+  } catch {}
+
+  if (!horarios || !horarios.length) {
+    horarios = [
+      { label: 'Segunda 08:00' },
+      { label: 'Segunda 14:00' },
+      { label: 'Terça 09:00' },
+      { label: 'Quarta 10:00' },
+      { label: 'Quinta 11:00' },
+    ];
+  }
+
+  const linhas = horarios.map((h, i) => `${i + 1}) ${h.label}`).join('\n');
+  return `Escolha o horário (número):\n\n${linhas}`;
 }
 
-function confirmarAgendamento({ horarioLabel, descricao }) {
+async function confirmarAgendamento({ horarioLabel, descricao }) {
   return `Confirma o agendamento?\n\nServiço: ${descricao}\nHorário: ${horarioLabel}\n\n1) Sim\n2) Não`;
 }
 

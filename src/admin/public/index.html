@@ -21,8 +21,11 @@
 </head>
 <body>
   <header>
-    <h1>Oficina do TETEU — Painel</h1>
-    <p class="muted">Leituras: clientes, agendamentos do dia, mensagens, estatísticas</p>
+    <h1 id="titulo-empresa">Painel Admin</h1>
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <p class="muted" style="margin:0;">Clientes, agendamentos e mensagens</p>
+      <a href="/superadmin/" style="color:#1d9bf0;font-size:0.85rem;text-decoration:none;">⚙️ Configurações</a>
+    </div>
   </header>
   <main>
     <div class="card">
@@ -67,6 +70,11 @@
       document.getElementById('agenda').textContent = JSON.stringify(agenda, null, 2);
     }
     load().catch(console.error);
+
+    fetch('/superadmin/api/config').then(r => r.json()).then(cfg => {
+      const nome = cfg.empresa_nome && cfg.empresa_nome.valor;
+      if (nome) document.getElementById('titulo-empresa').textContent = nome + ' — Painel Admin';
+    }).catch(() => {});
   </script>
 </body>
 </html>

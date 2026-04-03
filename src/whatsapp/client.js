@@ -1,26 +1,32 @@
 'use strict';
 
 const config = require('../config');
+const { getDbConfig } = require('../config/loader');
 
-function buildUrl() {
-  const id = config.whatsapp.phoneNumberId;
-  if (!id) throw new Error('WHATSAPP_PHONE_NUMBER_ID não configurado');
-  return `https://graph.facebook.com/v21.0/${id}/messages`;
+async function getCredentials() {
+  const token = await getDbConfig('whatsapp_token', config.whatsapp.token);
+  const phoneNumberId = await getDbConfig('whatsapp_phone_number_id', config.whatsapp.phoneNumberId);
+  return { token, phoneNumberId };
 }
 
 async function sendText(to, text) {
-  const token = config.whatsapp.token;
+  const { token, phoneNumberId } = await getCredentials();
   if (!token) {
-    console.warn('[whatsapp] WHATSAPP_TOKEN ausente — mensagem não enviada (dev)');
+    console.warn('[whatsapp] token ausente — mensagem não enviada (dev)');
     return { ok: false, skipped: true };
   }
+  if (!phoneNumberId) {
+    console.warn('[whatsapp] phone_number_id ausente — mensagem não enviada (dev)');
+    return { ok: false, skipped: true };
+  }
+  const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
   const body = {
     messaging_product: 'whatsapp',
     to,
     type: 'text',
     text: { body: text },
   };
-  const res = await fetch(buildUrl(), {
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,

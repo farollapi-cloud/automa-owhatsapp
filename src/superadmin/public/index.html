@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Superadmin — Configurações</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 0; background: #0f1419; color: #e7e9ea; min-height: 100vh; }
+    header { padding: 1rem 1.5rem; border-bottom: 1px solid #2f3336; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 1.2rem; margin: 0; }
+    header nav a { color: #1d9bf0; text-decoration: none; font-size: 0.9rem; margin-left: 1rem; }
+    header nav a:hover { text-decoration: underline; }
+    main { max-width: 780px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    .section { background: #16181c; border: 1px solid #2f3336; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
+    .section h2 { font-size: 1rem; margin: 0 0 1rem; color: #e7e9ea; border-bottom: 1px solid #2f3336; padding-bottom: 0.6rem; }
+    label { display: block; font-size: 0.82rem; color: #71767b; margin-bottom: 0.25rem; margin-top: 0.75rem; }
+    label:first-child { margin-top: 0; }
+    input[type=text], input[type=password], input[type=tel], textarea {
+      width: 100%; padding: 0.55rem 0.75rem; background: #0f1419; border: 1px solid #2f3336;
+      border-radius: 6px; color: #e7e9ea; font-size: 0.9rem; outline: none;
+    }
+    input:focus, textarea:focus { border-color: #1d9bf0; }
+    textarea { resize: vertical; font-family: monospace; font-size: 0.82rem; min-height: 80px; }
+    .webhook-box { display: flex; gap: 0.5rem; align-items: center; }
+    .webhook-box input { flex: 1; }
+    .btn { padding: 0.5rem 1.1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+    .btn-copy { background: #2f3336; color: #e7e9ea; }
+    .btn-copy:hover { background: #3d4347; }
+    .btn-save { background: #1d9bf0; color: #fff; width: 100%; padding: 0.7rem; font-size: 1rem; margin-top: 1rem; border-radius: 8px; }
+    .btn-save:hover { background: #1a8cd8; }
+    .btn-save:disabled { background: #2f3336; color: #71767b; cursor: not-allowed; }
+    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+      background: #1d9bf0; color: #fff; padding: 0.65rem 1.5rem; border-radius: 8px;
+      font-size: 0.9rem; display: none; z-index: 999; }
+    .toast.error { background: #f4212e; }
+    .muted { color: #71767b; font-size: 0.82rem; margin-top: 0.3rem; }
+    .horarios-list { list-style: none; padding: 0; margin: 0.5rem 0; }
+    .horarios-list li { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    .horarios-list li input { flex: 1; }
+    .horarios-list li input.hora-input { flex: 0 0 90px; }
+    .btn-rem { background: #2f3336; color: #f4212e; border: none; border-radius: 5px; padding: 0.35rem 0.6rem; cursor: pointer; font-size: 0.85rem; }
+    .btn-add { background: #2f3336; color: #1d9bf0; border: none; border-radius: 6px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.85rem; margin-top: 0.25rem; }
+    .btn-add:hover { background: #3d4347; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⚙️ Superadmin — Configurações</h1>
+    <nav>
+      <a href="/admin/">Painel Admin</a>
+    </nav>
+  </header>
+  <main>
+
+    <div class="section">
+      <h2>🏢 Empresa</h2>
+      <label for="empresa_nome">Nome da empresa (exibido no bot)</label>
+      <input type="text" id="empresa_nome" placeholder="Ex.: Oficina do TETEU" />
+      <label for="empresa_telefone">Telefone de contato</label>
+      <input type="tel" id="empresa_telefone" placeholder="Ex.: 5511999990000" />
+    </div>
+
+    <div class="section">
+      <h2>📱 Credenciais WhatsApp Cloud API</h2>
+      <p class="muted">Encontre essas informações em <strong>developers.facebook.com</strong> → seu app → WhatsApp → Configuração da API.</p>
+      <label for="whatsapp_phone_number_id">Phone Number ID</label>
+      <input type="text" id="whatsapp_phone_number_id" placeholder="Ex.: 123456789012345" />
+      <label for="whatsapp_verify_token">Verify Token (webhook)</label>
+      <input type="text" id="whatsapp_verify_token" placeholder="Ex.: meu_token_secreto" />
+      <label for="whatsapp_token">Access Token</label>
+      <input type="password" id="whatsapp_token" placeholder="EAAxxxxxxx..." autocomplete="new-password" />
+      <label for="whatsapp_app_secret">App Secret (opcional)</label>
+      <input type="password" id="whatsapp_app_secret" placeholder="Deixe em branco para não validar assinatura" autocomplete="new-password" />
+    </div>
+
+    <div class="section">
+      <h2>🔗 URL do Webhook</h2>
+      <p class="muted">Copie esta URL e configure no <strong>developers.facebook.com</strong> → Webhook → URL de callback.</p>
+      <div class="webhook-box">
+        <input type="text" id="webhook_url" readonly />
+        <button class="btn btn-copy" onclick="copyWebhook()">Copiar</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🕐 Horários de Atendimento</h2>
+      <p class="muted">Cada linha representa uma opção de horário exibida ao cliente. O sistema agenda a quantidade de dias a partir de hoje correspondente à posição na lista.</p>
+      <ul class="horarios-list" id="horarios-list"></ul>
+      <button class="btn-add" onclick="addHorario()">+ Adicionar horário</button>
+    </div>
+
+    <div class="section">
+      <h2>💬 Mensagens do Bot</h2>
+      <label for="msg_boas_vindas">Mensagem de boas-vindas (ao primeiro contato)</label>
+      <textarea id="msg_boas_vindas" rows="2" placeholder="Ex.: Bem-vindo à Oficina do TETEU! Qual é seu nome?"></textarea>
+    </div>
+
+    <button class="btn btn-save" id="btn-save" onclick="salvar()">Salvar configurações</button>
+
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const HORARIOS_DEFAULT = [
+      { label: 'Segunda 08:00', hour: 8, minute: 0 },
+      { label: 'Segunda 14:00', hour: 14, minute: 0 },
+      { label: 'Terça 09:00', hour: 9, minute: 0 },
+      { label: 'Quarta 10:00', hour: 10, minute: 0 },
+      { label: 'Quinta 11:00', hour: 11, minute: 0 },
+    ];
+
+    function showToast(msg, isError) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (isError ? ' error' : '');
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
+    function renderHorarios(list) {
+      const ul = document.getElementById('horarios-list');
+      ul.innerHTML = '';
+      list.forEach((h, i) => {
+        const li = document.createElement('li');
+        const timeVal = String(h.hour || 0).padStart(2, '0') + ':' + String(h.minute || 0).padStart(2, '0');
+        li.innerHTML =
+          '<span style="color:#71767b;font-size:0.8rem;min-width:20px;">' + (i + 1) + ')</span>' +
+          '<input type="text" placeholder="Rótulo (ex.: Segunda 08:00)" value="' + escHtml(h.label || '') + '" data-i="' + i + '" data-field="label" />' +
+          '<input type="time" class="hora-input" value="' + timeVal + '" data-i="' + i + '" data-field="time" />' +
+          '<button class="btn-rem" onclick="removeHorario(' + i + ')">✕</button>';
+        ul.appendChild(li);
+      });
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function getHorarios() {
+      const list = [];
+      document.querySelectorAll('#horarios-list li').forEach(li => {
+        const labelInput = li.querySelector('[data-field="label"]');
+        const timeInput = li.querySelector('[data-field="time"]');
+        const label = labelInput ? labelInput.value.trim() : '';
+        const timeVal = timeInput ? timeInput.value : '08:00';
+        const parts = timeVal.split(':');
+        list.push({ label, hour: parseInt(parts[0] || 8, 10), minute: parseInt(parts[1] || 0, 10) });
+      });
+      return list;
+    }
+
+    function addHorario() {
+      const cur = getHorarios();
+      cur.push({ label: '', hour: 9, minute: 0 });
+      renderHorarios(cur);
+    }
+
+    function removeHorario(i) {
+      const cur = getHorarios();
+      cur.splice(i, 1);
+      renderHorarios(cur);
+    }
+
+    async function copyWebhook() {
+      const val = document.getElementById('webhook_url').value;
+      try {
+        await navigator.clipboard.writeText(val);
+        showToast('URL copiada!');
+      } catch {
+        document.getElementById('webhook_url').select();
+        document.execCommand('copy');
+        showToast('URL copiada!');
+      }
+    }
+
+    async function load() {
+      try {
+        const [cfgRes, whRes] = await Promise.all([
+          fetch('/superadmin/api/config').then(r => r.json()),
+          fetch('/superadmin/api/webhook-url').then(r => r.json()),
+        ]);
+
+        document.getElementById('webhook_url').value = whRes.url || '';
+
+        const fields = ['empresa_nome', 'empresa_telefone', 'whatsapp_phone_number_id',
+                        'whatsapp_verify_token', 'whatsapp_token', 'whatsapp_app_secret', 'msg_boas_vindas'];
+        for (const f of fields) {
+          const el = document.getElementById(f);
+          if (el && cfgRes[f]) el.value = cfgRes[f].valor || '';
+        }
+
+        let horarios = HORARIOS_DEFAULT;
+        if (cfgRes.horarios && cfgRes.horarios.valor) {
+          try { horarios = JSON.parse(cfgRes.horarios.valor); } catch {}
+        }
+        renderHorarios(horarios);
+      } catch (e) {
+        showToast('Erro ao carregar configurações', true);
+      }
+    }
+
+    async function salvar() {
+      const btn = document.getElementById('btn-save');
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+      try {
+        const horarios = getHorarios();
+        const configs = {
+          empresa_nome: document.getElementById('empresa_nome').value.trim(),
+          empresa_telefone: document.getElementById('empresa_telefone').value.trim(),
+          whatsapp_phone_number_id: document.getElementById('whatsapp_phone_number_id').value.trim(),
+          whatsapp_verify_token: document.getElementById('whatsapp_verify_token').value.trim(),
+          whatsapp_token: document.getElementById('whatsapp_token').value.trim(),
+          whatsapp_app_secret: document.getElementById('whatsapp_app_secret').value.trim(),
+          msg_boas_vindas: document.getElementById('msg_boas_vindas').value.trim(),
+          horarios: JSON.stringify(horarios),
+        };
+        const res = await fetch('/superadmin/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ configs }),
+        });
+        const json = await res.json();
+        if (json.ok) {
+          showToast('✅ Configurações salvas com sucesso!');
+        } else {
+          showToast('Erro: ' + (json.error || 'desconhecido'), true);
+        }
+      } catch (e) {
+        showToast('Erro ao salvar: ' + e.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Salvar configurações';
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
