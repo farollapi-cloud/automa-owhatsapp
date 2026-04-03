@@ -94,6 +94,14 @@
       <h2>💬 Mensagens do Bot</h2>
       <label for="msg_boas_vindas">Mensagem de boas-vindas (ao primeiro contato)</label>
       <textarea id="msg_boas_vindas" rows="2" placeholder="Ex.: Bem-vindo à Oficina do TETEU! Qual é seu nome?"></textarea>
+
+      <label for="msg_menu_sem_agendamento">Menu principal — sem agendamento ativo</label>
+      <p class="muted" style="margin-top:0.2rem;">Use *texto* para negrito. Mantenha os números (1), 2), 3)) para o bot funcionar corretamente.</p>
+      <textarea id="msg_menu_sem_agendamento" rows="5" placeholder="*Nome da Empresa*&#10;&#10;1) Agendar serviço&#10;2) Falar com atendente&#10;3) Encerrar"></textarea>
+
+      <label for="msg_menu_com_agendamento">Menu — com agendamento ativo</label>
+      <p class="muted" style="margin-top:0.2rem;">Mantenha os números (1), 2), 3), 4)) para o bot funcionar corretamente.</p>
+      <textarea id="msg_menu_com_agendamento" rows="7" placeholder="*Nome da Empresa*&#10;&#10;Você tem um agendamento ativo.&#10;&#10;1) Ver dados&#10;2) Reagendar&#10;3) Cancelar&#10;4) Voltar ao menu principal"></textarea>
     </div>
 
     <button class="btn btn-save" id="btn-save" onclick="salvar()">Salvar configurações</button>
@@ -185,7 +193,8 @@
         document.getElementById('webhook_url').value = whRes.url || '';
 
         const fields = ['empresa_nome', 'empresa_telefone', 'whatsapp_phone_number_id',
-                        'whatsapp_verify_token', 'whatsapp_token', 'whatsapp_app_secret', 'msg_boas_vindas'];
+                        'whatsapp_verify_token', 'whatsapp_token', 'whatsapp_app_secret',
+                        'msg_boas_vindas', 'msg_menu_sem_agendamento', 'msg_menu_com_agendamento'];
         for (const f of fields) {
           const el = document.getElementById(f);
           if (el && cfgRes[f]) el.value = cfgRes[f].valor || '';
@@ -215,6 +224,8 @@
           whatsapp_token: document.getElementById('whatsapp_token').value.trim(),
           whatsapp_app_secret: document.getElementById('whatsapp_app_secret').value.trim(),
           msg_boas_vindas: document.getElementById('msg_boas_vindas').value.trim(),
+          msg_menu_sem_agendamento: document.getElementById('msg_menu_sem_agendamento').value.trim(),
+          msg_menu_com_agendamento: document.getElementById('msg_menu_com_agendamento').value.trim(),
           horarios: JSON.stringify(horarios),
         };
         const res = await fetch('/superadmin/api/config', {

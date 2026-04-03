@@ -7,6 +7,8 @@ async function getNomeEmpresa() {
 }
 
 async function menuSemAgendamento() {
+  const custom = await getDbConfig('msg_menu_sem_agendamento');
+  if (custom) return custom;
   const nome = await getNomeEmpresa();
   return (
     `*${nome}*\n\n` +
@@ -17,6 +19,8 @@ async function menuSemAgendamento() {
 }
 
 async function menuComAgendamento() {
+  const custom = await getDbConfig('msg_menu_com_agendamento');
+  if (custom) return custom;
   const nome = await getNomeEmpresa();
   return (
     `*${nome}*\n\n` +

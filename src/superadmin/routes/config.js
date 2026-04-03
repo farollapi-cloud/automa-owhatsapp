@@ -51,6 +51,8 @@ router.post('/api/config', express.json(), async (req, res) => {
       { chave: 'whatsapp_app_secret', tipo: 'secret', descricao: 'App Secret para validação de assinatura' },
       { chave: 'horarios', tipo: 'json', descricao: 'Horários de atendimento disponíveis (JSON)' },
       { chave: 'msg_boas_vindas', tipo: 'string', descricao: 'Mensagem de boas-vindas ao primeiro contato' },
+      { chave: 'msg_menu_sem_agendamento', tipo: 'string', descricao: 'Texto do menu principal (sem agendamento ativo)' },
+      { chave: 'msg_menu_com_agendamento', tipo: 'string', descricao: 'Texto do menu (com agendamento ativo)' },
     ];
 
     for (const field of FIELDS) {
