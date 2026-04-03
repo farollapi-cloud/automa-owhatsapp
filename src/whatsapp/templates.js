@@ -10,8 +10,10 @@ async function menuSemAgendamento() {
   const custom = await getDbConfig('msg_menu_sem_agendamento');
   if (custom) return custom;
   const nome = await getNomeEmpresa();
+  const tel = await getDbConfig('empresa_telefone');
+  const telLine = tel ? `\nTel: ${tel}` : '';
   return (
-    `*${nome}*\n\n` +
+    `*${nome}*${telLine}\n\n` +
     `1) Agendar serviço\n` +
     `2) Falar com atendente\n` +
     `3) Encerrar`

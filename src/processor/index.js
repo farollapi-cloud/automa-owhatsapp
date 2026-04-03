@@ -83,7 +83,9 @@ async function processarMensagem({ cliente, sessao, texto }) {
     if (msg === '2') {
       novoEstado = ESTADO.POS_ACAO;
       gravarHistorico(estado, novoEstado, msg, {});
-      respostas.push('Um atendente irá responder em breve. Obrigado!');
+      const tel = await getDbConfig('empresa_telefone');
+      const telInfo = tel ? `\n\nTelefone: ${tel}` : '';
+      respostas.push(`Um atendente irá responder em breve. Obrigado!${telInfo}`);
       return { respostas, novoEstado, novosDados: dados, historico };
     }
     if (msg === '3') {
