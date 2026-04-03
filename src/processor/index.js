@@ -58,6 +58,14 @@ async function processarMensagem({ cliente, sessao, texto }) {
     historico = { estado_anterior, estado_novo, mensagem_trigger, metadata: metadata || {} };
   };
 
+  if (estado === ESTADO.NOVO_CONTATO) {
+    novoEstado = ESTADO.AGUARDANDO_NOME;
+    const boasVindas = await getDbConfig('msg_boas_vindas');
+    const nomeEmpresa = await getDbConfig('empresa_nome') || 'Oficina do TETEU';
+    respostas.push(boasVindas || `Bem-vindo à ${nomeEmpresa}! Qual é seu nome?`);
+    return { respostas, novoEstado, novosDados: {}, historico: null };
+  }
+
   if (estado === ESTADO.AGUARDANDO_NOME) {
     if (!msg) {
       respostas.push('Por favor, envie seu nome.');

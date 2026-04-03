@@ -78,12 +78,12 @@ async function handleIncoming({ telefone, texto, whatsapp_message_id, whatsapp_t
   let cliente = await repos.findClienteByTelefone(telefone);
   if (!cliente) {
     cliente = await repos.insertCliente({ telefone, whatsapp_name });
-    await repos.insertSessao(cliente.id, 'NOVO_CONTATO', {});
+    await repos.insertSessao(cliente.id, ESTADO.NOVO_CONTATO, {});
   }
 
   let sessao = await repos.findSessaoByClienteId(cliente.id);
   if (!sessao) {
-    await repos.insertSessao(cliente.id, 'NOVO_CONTATO', {});
+    await repos.insertSessao(cliente.id, ESTADO.NOVO_CONTATO, {});
     sessao = await repos.findSessaoByClienteId(cliente.id);
   }
 
