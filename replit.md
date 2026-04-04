@@ -1,53 +1,68 @@
-# Oficina do TETEU - WhatsApp Bot
+# Oficina do TETEU — Bot WhatsApp
 
-A Node.js WhatsApp automation system for an automotive workshop. Provides a conversational interface for customers to schedule services, check appointments, cancel them, and receive reminders via the WhatsApp Cloud API. Includes an administrative dashboard.
+## Arquitetura
 
-## Tech Stack
+- **Backend**: Node.js/Express na porta 5000 (`npm start` → `src/index.js`)
+- **Banco**: PostgreSQL (via `DATABASE_URL`)
+- **WhatsApp**: Meta Cloud API (configurável via painel superadmin)
 
-- **Runtime**: Node.js >= 18
-- **Framework**: Express.js
-- **Database**: PostgreSQL (Replit built-in)
-- **Cache**: Redis via ioredis (optional - app works without it)
-- **Scheduler**: node-cron
-- **Integration**: WhatsApp Cloud API (Meta Graph API v21.0)
+## Painéis
 
-## Project Structure
+| URL | Descrição |
+|-----|-----------|
+| `/` | Redireciona para `/superadmin/` (se não configurado) ou `/admin/` |
+| `/superadmin/` | Configurações: empresa, credenciais WhatsApp, horários, mensagens do bot |
+| `/admin/` | Painel operacional: clientes, agendamentos, mensagens |
 
-- `src/index.js` — App entry point, Express server setup
-- `src/config/` — Centralized configuration from env vars
-- `src/webhook/` — WhatsApp webhook receiver
-- `src/processor/` — State machine for conversation flows
-- `src/scheduler/` — Cron jobs for reminders and retries
-- `src/database/` — PostgreSQL connection, repos, migrations
-- `src/cache/` — Redis client helpers
-- `src/admin/` — Admin dashboard routes and static files
-- `src/whatsapp/` — WhatsApp API client and message templates
-- `src/utils/` — Logging, formatting, validation helpers
-- `scripts/migrations/` — Migration runner scripts
+## Estrutura de Pastas
 
-## Environment Variables
+```
+src/
+  admin/          — Painel operacional (HTML + rotas Express)
+  superadmin/     — Painel de configuração (empresa, WhatsApp, horários, msgs)
+  cache/          — Cache Redis
+  config/         — Configurações (DB, WhatsApp, loader)
+  database/       — Repositórios e migração SQL (001_initial.sql)
+  processor/      — Máquina de estados do bot WhatsApp
+  scheduler/      — Cron jobs de lembretes e retry
+  utils/          — Formatadores, logger, validadores
+  webhook/        — Receptor de eventos WhatsApp
+  whatsapp/       — Client e templates de mensagem
+  internal/       — Notificações internas
+scripts/
+  migrations/     — Runner de migrações
+```
 
-Required:
-- `DATABASE_URL` — PostgreSQL connection string (auto-set by Replit)
-- `WHATSAPP_TOKEN` — WhatsApp Cloud API access token
-- `WHATSAPP_PHONE_NUMBER_ID` — WhatsApp phone number ID
-- `WHATSAPP_VERIFY_TOKEN` — Webhook verification token
-- `WHATSAPP_APP_SECRET` — Meta app secret
+## Migrações
 
-Optional:
-- `REDIS_URL` — Redis connection string (app works without it)
-- `INTERNAL_NOTIFY_SECRET` — Secret for internal notifications
-- `PORT` — Server port (default 5000)
-- `NODE_ENV` — Environment (development/production)
+- Runner: `node scripts/migrations/run.js`
+- Arquivo: `src/database/migrations/001_initial.sql`
 
-## Running the App
+## Variáveis de Ambiente
 
-- `npm start` — Start the server
-- `npm run migrate` — Run database migrations
+| Variável | Obrigatória | Descrição |
+|----------|-------------|-----------|
+| `DATABASE_URL` | Sim | PostgreSQL connection string |
+| `PORT` | Não | Porta do servidor (padrão 3000) |
+| `NODE_ENV` | Não | `development` ou `production` |
+| `REDIS_URL` | Não | URL do Redis (cache de sessões) |
+| `INTERNAL_NOTIFY_SECRET` | Não | Segredo para notificações internas |
 
-## Setup Notes
+Credenciais WhatsApp são configuradas pelo painel Superadmin e salvas no banco.
 
-- App runs on port 5000 (0.0.0.0)
-- Database migrations applied via the built-in PostgreSQL database
-- Deployment configured as VM (always-running) for webhook support and cron jobs
-- Redis is optional; the app gracefully degrades without it
+## Workflows Replit
+
+| Workflow | Comando | Porta |
+|----------|---------|-------|
+| Start application | `npm start` | 5000 |
+
+## Fluxo do Bot
+
+1. Cliente envia mensagem → webhook `/webhook/whatsapp`
+2. Processador analisa estado da sessão (`src/processor/`)
+3. Resposta enviada via WhatsApp Cloud API
+4. Agendamentos gerenciados via `src/scheduler/`
+
+## GitHub
+
+Repositório: https://github.com/farollapi-cloud/automa-owhatsapp
