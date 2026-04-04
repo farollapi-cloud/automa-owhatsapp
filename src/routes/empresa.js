@@ -23,37 +23,19 @@ function webhookUrl(token) {
 }
 
 /**
- * POST /empresa — criação de empresa.
- * Single-tenant: só permite criar se não houver nenhuma empresa cadastrada (bootstrap).
- * Após o bootstrap, exige autenticação de admin.
+ * POST /empresa — bootstrap único da instância single-tenant.
+ * Permitido apenas quando não existe nenhuma empresa no banco.
+ * Após o primeiro cadastro, qualquer tentativa retorna 409.
+ * Atualização posterior de dados fica em /admin/api/empresa.
  */
 router.post('/', async (req, res) => {
   try {
     const has_empresa = await repos.hasAnyEmpresa();
-
     if (has_empresa) {
-      return requireAdmin(req, res, async () => {
-        try {
-          const { nome, email, cnpj } = req.body || {};
-          if (!nome || !String(nome).trim()) {
-            return res.status(400).json({ error: 'O campo "nome" é obrigatório.' });
-          }
-          const empresa = await repos.insertEmpresa({ nome, email, cnpj });
-          res.status(201).json({
-            id: empresa.id,
-            nome: empresa.nome,
-            email: empresa.email,
-            cnpj: empresa.cnpj,
-            status: empresa.status,
-            webhook_url: webhookUrl(empresa.webhook_token),
-            created_at: empresa.created_at,
-          });
-        } catch (e) {
-          res.status(500).json({ error: e.message });
-        }
+      return res.status(409).json({
+        error: 'Instância já configurada. Use o painel admin para atualizar os dados da empresa.',
       });
     }
-
     const { nome, email, cnpj } = req.body || {};
     if (!nome || !String(nome).trim()) {
       return res.status(400).json({ error: 'O campo "nome" é obrigatório.' });
