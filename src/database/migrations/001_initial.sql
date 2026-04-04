@@ -129,3 +129,14 @@ CREATE TABLE IF NOT EXISTS fila_retry (
     erro_ultimo TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS servicos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome VARCHAR(200) NOT NULL,
+    categoria VARCHAR(100),
+    preco DECIMAL(10,2),
+    descricao TEXT,
+    ativo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);

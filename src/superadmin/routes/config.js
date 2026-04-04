@@ -45,6 +45,7 @@ router.post('/api/config', express.json(), async (req, res) => {
     const FIELDS = [
       { chave: 'empresa_nome', tipo: 'string', descricao: 'Nome da empresa exibido no bot' },
       { chave: 'empresa_telefone', tipo: 'string', descricao: 'Telefone de contato da empresa' },
+      { chave: 'admin_telefone', tipo: 'string', descricao: 'Telefone do admin para comandos WhatsApp' },
       { chave: 'whatsapp_provider', tipo: 'string', descricao: 'Provedor WhatsApp: meta ou uazapi' },
       { chave: 'uazapi_base_url', tipo: 'string', descricao: 'URL base do servidor UazAPI' },
       { chave: 'uazapi_instance', tipo: 'string', descricao: 'Nome da instância UazAPI' },
@@ -54,6 +55,7 @@ router.post('/api/config', express.json(), async (req, res) => {
       { chave: 'whatsapp_verify_token', tipo: 'string', descricao: 'Token de verificação do webhook (Meta)' },
       { chave: 'whatsapp_app_secret', tipo: 'secret', descricao: 'App Secret para validação de assinatura (Meta)' },
       { chave: 'horarios', tipo: 'json', descricao: 'Horários de atendimento disponíveis (JSON)' },
+      { chave: 'horarios_semana', tipo: 'json', descricao: 'Horários por dia da semana (JSON)' },
       { chave: 'msg_boas_vindas', tipo: 'string', descricao: 'Mensagem de boas-vindas ao primeiro contato' },
       { chave: 'msg_menu_sem_agendamento', tipo: 'string', descricao: 'Texto do menu principal (sem agendamento ativo)' },
       { chave: 'msg_menu_com_agendamento', tipo: 'string', descricao: 'Texto do menu (com agendamento ativo)' },
@@ -109,6 +111,47 @@ router.get('/api/webhook-url', async (req, res) => {
   const provider = (await getDbConfig('whatsapp_provider', 'meta')) || 'meta';
   const path_ = provider === 'uazapi' ? '/webhook/uazapi' : '/webhook/whatsapp';
   res.json({ url: `${proto}://${host}${path_}`, provider });
+});
+
+router.get('/api/servicos', async (req, res) => {
+  try {
+    const list = await repos.listServicos();
+    res.json(list);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/api/servicos', express.json(), async (req, res) => {
+  try {
+    const { nome, categoria, preco, descricao } = req.body || {};
+    if (!nome || !String(nome).trim()) {
+      return res.status(400).json({ error: 'Nome do serviço é obrigatório' });
+    }
+    const existing = await repos.findServicoPorNome(String(nome).trim());
+    if (existing) {
+      return res.status(409).json({ error: 'Já existe um serviço com esse nome' });
+    }
+    const precoNum = preco != null && String(preco).trim() !== '' ? parseFloat(String(preco).replace(',', '.')) : null;
+    const s = await repos.insertServico({
+      nome: String(nome).trim(),
+      categoria: categoria ? String(categoria).trim() : null,
+      preco: precoNum,
+      descricao: descricao ? String(descricao).trim() : null,
+    });
+    res.json(s);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.delete('/api/servicos/:id', async (req, res) => {
+  try {
+    await repos.deleteServico(req.params.id);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.use(express.static(path.join(__dirname, '..', 'public')));

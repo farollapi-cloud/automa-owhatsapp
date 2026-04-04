@@ -11,6 +11,7 @@ const logger = require('../utils/logger');
 const { parseWhatsAppTs } = require('../utils/formatters');
 const { setSessaoCache, invalidateSessaoCache } = require('../cache/redis');
 const { getDbConfig } = require('../config/loader');
+const { isAdmin, processarComando } = require('../processor/commands');
 
 const router = express.Router();
 
@@ -75,6 +76,18 @@ router.post('/whatsapp', express.json({ verify: (req, res, buf) => { req.rawBody
 
 async function handleIncoming({ telefone, texto, whatsapp_message_id, whatsapp_timestamp, whatsapp_name }) {
   const t0 = Date.now();
+
+  if (texto && await isAdmin(telefone)) {
+    const respostas = await processarComando(telefone, texto);
+    if (respostas) {
+      console.log('[webhook] comando admin executado:', texto.slice(0, 50));
+      for (const linha of respostas) {
+        await sendText(telefone, linha);
+      }
+      return;
+    }
+  }
+
   let cliente = await repos.findClienteByTelefone(telefone);
   if (!cliente) {
     cliente = await repos.insertCliente({ telefone, whatsapp_name });

@@ -312,6 +312,84 @@ async function adminEstatisticas() {
   return r.rows[0];
 }
 
+async function listServicos() {
+  const r = await query(`SELECT * FROM servicos WHERE ativo = true ORDER BY categoria ASC, nome ASC`);
+  return r.rows;
+}
+
+async function insertServico({ nome, categoria, preco, descricao }) {
+  const id = uuidv4();
+  await query(
+    `INSERT INTO servicos (id, nome, categoria, preco, descricao) VALUES ($1, $2, $3, $4, $5)`,
+    [id, nome, categoria || null, preco != null ? preco : null, descricao || null]
+  );
+  const r = await query(`SELECT * FROM servicos WHERE id = $1`, [id]);
+  return r.rows[0];
+}
+
+async function findServicoPorNome(nome) {
+  const r = await query(`SELECT * FROM servicos WHERE LOWER(nome) = LOWER($1) AND ativo = true LIMIT 1`, [nome]);
+  return r.rows[0] || null;
+}
+
+async function deleteServico(id) {
+  await query(`UPDATE servicos SET ativo = false, updated_at = NOW() WHERE id = $1`, [id]);
+}
+
+async function listAgendamentosHoje() {
+  const r = await query(
+    `SELECT a.*, c.nome, c.telefone
+     FROM agendamentos a
+     JOIN clientes c ON c.id = a.cliente_id
+     WHERE DATE(a.horario) = CURRENT_DATE
+     AND a.status IN ('pendente', 'confirmado')
+     ORDER BY a.horario`
+  );
+  return r.rows;
+}
+
+async function listAgendamentosSemana() {
+  const r = await query(
+    `SELECT a.*, c.nome, c.telefone
+     FROM agendamentos a
+     JOIN clientes c ON c.id = a.cliente_id
+     WHERE a.horario >= CURRENT_DATE
+       AND a.horario < CURRENT_DATE + INTERVAL '7 days'
+       AND a.status IN ('pendente', 'confirmado')
+     ORDER BY a.horario`
+  );
+  return r.rows;
+}
+
+async function listAgendamentosPendentes() {
+  const r = await query(
+    `SELECT a.*, c.nome, c.telefone
+     FROM agendamentos a
+     JOIN clientes c ON c.id = a.cliente_id
+     WHERE a.status = 'pendente'
+     ORDER BY a.horario ASC
+     LIMIT 20`
+  );
+  return r.rows;
+}
+
+async function confirmarAgendamentoAdmin(agendamentoId) {
+  await query(
+    `UPDATE agendamentos SET status = 'confirmado', confirmado_em = NOW(), confirmado_por = 'admin', updated_at = NOW() WHERE id = $1`,
+    [agendamentoId]
+  );
+}
+
+async function insertAgendamentoAdmin({ cliente_id, horario, servico, descricao }) {
+  const id = uuidv4();
+  await query(
+    `INSERT INTO agendamentos (id, cliente_id, horario, servico, descricao, status, created_at)
+     VALUES ($1, $2, $3, $4, $5, 'confirmado', NOW())`,
+    [id, cliente_id, horario, servico || 'Serviço', descricao || '']
+  );
+  return findAgendamentoById(id);
+}
+
 module.exports = {
   getConfig,
   setConfig,
@@ -349,4 +427,13 @@ module.exports = {
   adminAgendamentosDoDia,
   adminMensagensCliente,
   adminEstatisticas,
+  listServicos,
+  insertServico,
+  findServicoPorNome,
+  deleteServico,
+  listAgendamentosHoje,
+  listAgendamentosSemana,
+  listAgendamentosPendentes,
+  confirmarAgendamentoAdmin,
+  insertAgendamentoAdmin,
 };
