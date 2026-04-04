@@ -167,7 +167,6 @@ router.post('/uazapi',
       let body = {};
       const rawBuf = req.body;
       const rawStr = Buffer.isBuffer(rawBuf) ? rawBuf.toString('utf8') : String(rawBuf || '');
-      console.log('[webhook/uazapi] RAW BODY:', rawStr.slice(0, 2000));
       try { body = JSON.parse(rawStr); } catch (_) { body = {}; }
 
       const eventField = body.event || body.type || body.msgtype || body.action || '';
