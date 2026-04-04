@@ -74,6 +74,33 @@ router.post('/api/config', express.json(), async (req, res) => {
   }
 });
 
+router.post('/api/test-uazapi', express.json(), async (req, res) => {
+  try {
+    const { getDbConfig } = require('../../config/loader');
+    const baseUrl = ((await getDbConfig('uazapi_base_url', '')) || '').replace(/\/$/, '');
+    const instance = (await getDbConfig('uazapi_instance', '')) || '';
+    const token = (await getDbConfig('uazapi_token', '')) || '';
+
+    if (!baseUrl || !instance || !token) {
+      return res.json({ ok: false, erro: 'Credenciais não configuradas (URL, instância ou token ausente)' });
+    }
+
+    const url = `${baseUrl}/${instance}/connectionState`;
+    const r = await fetch(url, {
+      method: 'GET',
+      headers: { Token: token, 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(8000),
+    });
+    const json = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      return res.json({ ok: false, erro: `HTTP ${r.status}`, detalhe: json });
+    }
+    return res.json({ ok: true, estado: json });
+  } catch (e) {
+    return res.json({ ok: false, erro: e.message });
+  }
+});
+
 router.get('/api/webhook-url', async (req, res) => {
   const proto = req.get('x-forwarded-proto') || req.protocol || 'https';
   const host = req.get('x-forwarded-host') || req.get('host') || 'localhost';

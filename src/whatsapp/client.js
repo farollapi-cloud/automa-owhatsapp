@@ -39,29 +39,36 @@ async function sendTextMeta(to, text) {
 }
 
 async function sendTextUazapi(to, text) {
-  const baseUrl = (await getDbConfig('uazapi_base_url', '')).replace(/\/$/, '');
-  const instance = await getDbConfig('uazapi_instance', '');
-  const token = await getDbConfig('uazapi_token', '');
+  const baseUrl = (await getDbConfig('uazapi_base_url', '') || '').replace(/\/$/, '');
+  const instance = (await getDbConfig('uazapi_instance', '')) || '';
+  const token = (await getDbConfig('uazapi_token', '')) || '';
 
   if (!baseUrl || !instance || !token) {
-    console.warn('[whatsapp/uazapi] configuração incompleta (base_url, instance ou token ausente) — mensagem não enviada');
+    console.error('[whatsapp/uazapi] CREDENCIAIS AUSENTES — base_url:', !!baseUrl, 'instance:', !!instance, 'token:', !!token);
     return { ok: false, skipped: true };
   }
 
   const phone = String(to).replace(/\D/g, '');
   const url = `${baseUrl}/${instance}/sendText`;
+  console.log('[whatsapp/uazapi] enviando para', phone, 'via', url);
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { Token: token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, body: text }),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    console.error('[whatsapp/uazapi] erro envio', res.status, json);
-    return { ok: false, error: json };
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Token: token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, body: text }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('[whatsapp/uazapi] ERRO HTTP', res.status, JSON.stringify(json));
+      return { ok: false, error: json };
+    }
+    console.log('[whatsapp/uazapi] enviado com sucesso', JSON.stringify(json));
+    return { ok: true, data: json };
+  } catch (e) {
+    console.error('[whatsapp/uazapi] ERRO DE REDE:', e.message, '— URL tentada:', url);
+    return { ok: false, error: e.message };
   }
-  return { ok: true, data: json };
 }
 
 async function sendText(to, text) {

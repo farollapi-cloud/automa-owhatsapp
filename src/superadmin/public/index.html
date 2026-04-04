@@ -82,6 +82,8 @@
         <input type="text" id="uazapi_instance" placeholder="Ex.: oficina-teteu" />
         <label for="uazapi_token">Token da instância</label>
         <input type="password" id="uazapi_token" placeholder="Token gerado no painel UazAPI" autocomplete="new-password" />
+        <button type="button" class="btn btn-test" id="btn-test-uazapi" onclick="testarUazapi()" style="margin-top:0.75rem;background:#2f3336;color:#e7e9ea;width:100%;padding:0.55rem;border-radius:6px;border:1px solid #2f3336;cursor:pointer;font-size:0.88rem;">🔌 Testar conexão com UazAPI</button>
+        <div id="test-result" style="margin-top:0.5rem;font-size:0.82rem;display:none;padding:0.5rem 0.75rem;border-radius:6px;"></div>
       </div>
 
       <div class="provider-fields hidden" id="fields-meta">
@@ -297,6 +299,39 @@
       } finally {
         btn.disabled = false;
         btn.textContent = 'Salvar configurações';
+      }
+    }
+
+    async function testarUazapi() {
+      const btn = document.getElementById('btn-test-uazapi');
+      const result = document.getElementById('test-result');
+      btn.disabled = true;
+      btn.textContent = '⏳ Testando...';
+      result.style.display = 'none';
+      try {
+        const res = await fetch('/superadmin/api/test-uazapi', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const json = await res.json();
+        result.style.display = 'block';
+        if (json.ok) {
+          result.style.background = '#1a3a2a';
+          result.style.color = '#4ade80';
+          result.style.border = '1px solid #166534';
+          result.textContent = '✅ Conexão OK! Estado: ' + JSON.stringify(json.estado);
+        } else {
+          result.style.background = '#3a1a1a';
+          result.style.color = '#f87171';
+          result.style.border = '1px solid #991b1b';
+          result.textContent = '❌ Erro: ' + json.erro + (json.detalhe ? ' — ' + JSON.stringify(json.detalhe) : '');
+        }
+      } catch (e) {
+        result.style.display = 'block';
+        result.style.background = '#3a1a1a';
+        result.style.color = '#f87171';
+        result.style.border = '1px solid #991b1b';
+        result.textContent = '❌ Erro de rede: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔌 Testar conexão com UazAPI';
       }
     }
 

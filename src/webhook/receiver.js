@@ -150,18 +150,32 @@ router.post('/uazapi', express.json(), async (req, res) => {
   res.sendStatus(200);
   try {
     const body = req.body;
-    if (body.event !== 'messages.received') return;
+    console.log('[webhook/uazapi] recebido event:', body.event, 'instance:', body.instance);
+
+    if (body.event !== 'messages.received') {
+      console.log('[webhook/uazapi] ignorando evento não-mensagem:', body.event);
+      return;
+    }
 
     const data = body.data || {};
     const key = data.key || {};
 
-    if (key.fromMe === true) return;
+    if (key.fromMe === true) {
+      console.log('[webhook/uazapi] ignorando mensagem própria (fromMe)');
+      return;
+    }
 
     const remoteJid = key.remoteJid || '';
-    if (remoteJid.endsWith('@g.us')) return;
+    if (remoteJid.endsWith('@g.us')) {
+      console.log('[webhook/uazapi] ignorando mensagem de grupo');
+      return;
+    }
 
     const telefone = normalizeTelefone(remoteJid.replace('@s.whatsapp.net', ''));
-    if (!telefone) return;
+    if (!telefone) {
+      console.log('[webhook/uazapi] telefone inválido, remoteJid:', remoteJid);
+      return;
+    }
 
     const msg = data.message || {};
     const texto =
