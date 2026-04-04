@@ -43,7 +43,7 @@ scripts/
 | Variável | Obrigatória | Descrição |
 |----------|-------------|-----------|
 | `DATABASE_URL` | Sim | PostgreSQL connection string |
-| `PORT` | Não | Porta do servidor (padrão 3000) |
+| `PORT` | Não | Porta do servidor (configurado para 5000 via Replit; padrão do código: 3000) |
 | `NODE_ENV` | Não | `development` ou `production` |
 | `REDIS_URL` | Não | URL do Redis (cache de sessões) |
 | `INTERNAL_NOTIFY_SECRET` | Não | Segredo para notificações internas |
