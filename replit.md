@@ -1,90 +1,53 @@
-# Oficina do TETEU — Bot WhatsApp
+# Oficina do TETEU - WhatsApp Bot
 
-## Arquitetura
+A Node.js WhatsApp automation system for an automotive workshop. Provides a conversational interface for customers to schedule services, check appointments, cancel them, and receive reminders via the WhatsApp Cloud API. Includes an administrative dashboard.
 
-- **Backend**: Node.js/Express na porta 5000 (`npm start` → `src/index.js`)
-- **Frontend**: Next.js 14 na porta 3001 (`npm run dev --prefix web`)
-- **Banco**: PostgreSQL (via `DATABASE_URL`)
-- **WhatsApp**: UazAPI (padrão) ou Meta Cloud API
+## Tech Stack
 
-## Estrutura de Pastas
+- **Runtime**: Node.js >= 18
+- **Framework**: Express.js
+- **Database**: PostgreSQL (Replit built-in)
+- **Cache**: Redis via ioredis (optional - app works without it)
+- **Scheduler**: node-cron
+- **Integration**: WhatsApp Cloud API (Meta Graph API v21.0)
 
-```
-src/
-  admin/          — Painel admin (HTML + rotas Express)
-  config/         — Configurações (DB, WhatsApp runtime)
-  database/       — Repositórios e migrações SQL
-  processor/      — Máquina de estados do bot
-  routes/         — Rotas REST (agendamento, empresa)
-  scheduler/      — Cron jobs de lembretes
-  utils/          — Utilitários (crypto, etc.)
-  webhook/        — Receptor de eventos WhatsApp
-  internal/       — Notificações internas
-web/              — Frontend Next.js
-scripts/
-  migrations/     — Runner de migrações (idempotente via tabela _migrations)
-```
+## Project Structure
 
-## Migrações
+- `src/index.js` — App entry point, Express server setup
+- `src/config/` — Centralized configuration from env vars
+- `src/webhook/` — WhatsApp webhook receiver
+- `src/processor/` — State machine for conversation flows
+- `src/scheduler/` — Cron jobs for reminders and retries
+- `src/database/` — PostgreSQL connection, repos, migrations
+- `src/cache/` — Redis client helpers
+- `src/admin/` — Admin dashboard routes and static files
+- `src/whatsapp/` — WhatsApp API client and message templates
+- `src/utils/` — Logging, formatting, validation helpers
+- `scripts/migrations/` — Migration runner scripts
 
-- Runner: `node scripts/migrations/run.js`
-- Arquivos em `src/database/migrations/` (ordenados por nome)
-- Tabela `_migrations` controla quais já foram aplicadas (idempotente)
-- Para re-aplicar: apagar registro da tabela `_migrations`
+## Environment Variables
 
-## Workflows Replit
+Required:
+- `DATABASE_URL` — PostgreSQL connection string (auto-set by Replit)
+- `WHATSAPP_TOKEN` — WhatsApp Cloud API access token
+- `WHATSAPP_PHONE_NUMBER_ID` — WhatsApp phone number ID
+- `WHATSAPP_VERIFY_TOKEN` — Webhook verification token
+- `WHATSAPP_APP_SECRET` — Meta app secret
 
-| Workflow        | Comando                       | Porta |
-|-----------------|-------------------------------|-------|
-| Start application | `npm start`                 | 5000  |
-| Frontend Web    | `npm run dev --prefix web`   | 3001  |
+Optional:
+- `REDIS_URL` — Redis connection string (app works without it)
+- `INTERNAL_NOTIFY_SECRET` — Secret for internal notifications
+- `PORT` — Server port (default 5000)
+- `NODE_ENV` — Environment (development/production)
 
-## Variáveis de Ambiente
+## Running the App
 
-| Variável                  | Obrigatória | Descrição                              |
-|---------------------------|-------------|----------------------------------------|
-| `DATABASE_URL`            | Sim         | PostgreSQL connection string           |
-| `CORS_ORIGIN`             | Não         | Origens permitidas (separadas por `,`) |
-| `WEBHOOK_BASE_URL`        | Não         | URL pública para webhook               |
-| `ADMIN_PASSWORD`          | Não         | Senha do painel admin                  |
-| `ADMIN_SESSION_SECRET`    | Não         | Segredo para cookie de sessão          |
-| `SETTINGS_ENCRYPTION_KEY` | Não         | 32-byte hex para criptografia tokens   |
-| `WHATSAPP_PROVIDER`       | Não         | `auto` (padrão), `uazapi` ou `meta`   |
+- `npm start` — Start the server
+- `npm run migrate` — Run database migrations
 
-Frontend (`web/.env.local`):
-- `NEXT_PUBLIC_API_URL` — URL do backend (ex: `https://xxx.replit.dev`)
-- `NEXT_PUBLIC_SUPPORT_WHATSAPP` — Link do suporte no WhatsApp
+## Setup Notes
 
-## Sincronização com GitHub
-
-Repositório: https://github.com/farollapi-cloud/automa-owhatsapp
-
-### Puxar atualizações do GitHub para o Replit
-
-```bash
-git fetch origin
-# Aplicar arquivos do origin/main exceto .replit e replit.nix:
-git checkout origin/main -- .
-git checkout HEAD -- .replit replit.nix
-git add -A && git commit -m "sync: origin/main"
-```
-
-### Enviar alterações do Replit para o GitHub
-
-```bash
-git push origin main
-```
-
-> Atenção: o Replit protege `.replit` e `replit.nix` — nunca sobrescreva esses arquivos com os do GitHub.
-
-## Rotas Principais
-
-| Rota              | Descrição                              |
-|-------------------|----------------------------------------|
-| `GET /`           | Redireciona para `/admin/`             |
-| `GET /admin/`     | Painel de configuração                 |
-| `POST /webhook/*` | Entradas do WhatsApp                   |
-| `GET /health`     | Health check                           |
-| `GET /agendamento/*` | API de agendamentos               |
-| `GET /empresa/*`  | API de dados da empresa                |
-| `POST /internal/notify` | Notificações internas           |
+- App runs on port 5000 (0.0.0.0)
+- Database migrations applied via the built-in PostgreSQL database
+- Deployment configured as VM (always-running) for webhook support and cron jobs
+- Redis is optional; the app gracefully degrades without it

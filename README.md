@@ -1,32 +1,20 @@
-# WhatsApp Bot — oficina (single-tenant)
+# Oficina do TETEU — WhatsApp Bot
 
-Backend Node.js (Express) com PostgreSQL, Redis, webhook **UazAPI** (recomendado), lembretes por cron, fluxo do **gerente** no WhatsApp (1/2/3 em pendentes) e **painel superadmin** em `/admin`.
-
-## Modelo de deploy (single-tenant)
-
-Cada **deploy** deste repositório atende **um único cliente** (ex.: uma oficina). O módulo de agendamento usa `empresa_id = 1` fixo ([`src/database/reposAgendamento.js`](src/database/reposAgendamento.js)).
-
-- Webhook **UazAPI** (por token na URL): `POST /webhook/entrada/:token` — URL completa no admin após `WEBHOOK_BASE_URL`
-- Webhook **Meta** (legado): `GET/POST /webhook/whatsapp` — só se usar `WHATSAPP_PROVIDER=meta`
-- App **usuário** (Next.js) em `web/` — `/agendamento` (horários, serviços, sem tokens de API)
-
-## Integração UazAPI
-
-- Credenciais: **Base URL** (ex. `https://focus.uazapi.com`), **instance token** (e opcionalmente admin token). Envio: `POST {base}/send/text?token=...&admintoken=...` com corpo `{ "number", "text" }`. Documentação: [docs.uazapi.com](https://docs.uazapi.com).
-- **Telefone da instância** (E.164, só dígitos): usado para reconhecer o **mesmo número do bot** ao usar atalhos 1/2/3 como gerente.
-- **JID do gerente** em `agendamento_config`: número pessoal que também pode confirmar/cancelar/reagendar pendentes.
-
-## Painel superadmin (`/admin`)
-
-- **UazAPI:** base URL, tokens, telefone da instância.
-- **Webhook:** copiar URL `.../webhook/entrada/{token}` para o painel UazAPI.
-- **Meta:** seção colapsável (legado).
-- **Atendimento:** boas-vindas e JID do gerente; **horários** editados no app `/agendamento`.
-- **`ADMIN_PASSWORD`:** se definido, o painel exige login.
+Backend Node.js (Express) com PostgreSQL, Redis, webhook WhatsApp Cloud API, lembretes por cron e painel em `/admin`.
 
 ## Deploy no Render
 
-Passo a passo: [`deploy.md`](deploy.md).
+1. Envie este repositório para o GitHub: [farollapi-cloud/automa-owhatsapp](https://github.com/farollapi-cloud/automa-owhatsapp).
+2. No [Render Dashboard](https://dashboard.render.com): **New** → **Blueprint** → conecte o repositório e aplique o [`render.yaml`](render.yaml).
+3. No serviço web, em **Environment**, preencha manualmente (marcados como *sync: false* no blueprint):
+   - `WHATSAPP_TOKEN` — token de acesso da API do WhatsApp
+   - `WHATSAPP_PHONE_NUMBER_ID` — ID do número
+   - `WHATSAPP_VERIFY_TOKEN` — token de verificação do webhook
+   - `WHATSAPP_APP_SECRET` — opcional, para validar `X-Hub-Signature-256`
+4. URL do webhook no Meta: `https://<seu-serviço>.onrender.com/webhook/whatsapp`
+5. Painel admin: `https://<seu-serviço>.onrender.com/admin/`
+
+O serviço escuta em `0.0.0.0:$PORT` conforme [Port binding](https://render.com/docs/web-services#port-binding).
 
 ## Local
 
@@ -41,4 +29,4 @@ npm start
 ## Scripts
 
 - `npm start` — servidor HTTP + crons (lembretes a cada minuto, retry a cada 5 minutos)
-- `npm run migrate` — aplica todos os `.sql` em `src/database/migrations/` em ordem
+- `npm run migrate` — aplica `src/database/migrations/001_initial.sql`
