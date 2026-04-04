@@ -159,46 +159,65 @@ async function handleIncoming({ telefone, texto, whatsapp_message_id, whatsapp_t
   });
 }
 
-router.post('/uazapi', express.json(), async (req, res) => {
-  res.sendStatus(200);
-  try {
-    const body = req.body;
-    console.log('[webhook/uazapi] recebido event:', body.event, 'instance:', body.instance);
+router.post('/uazapi',
+  express.raw({ type: '*/*', limit: '5mb' }),
+  async (req, res) => {
+    res.sendStatus(200);
+    try {
+      let body = {};
+      const rawBuf = req.body;
+      const rawStr = Buffer.isBuffer(rawBuf) ? rawBuf.toString('utf8') : String(rawBuf || '');
+      console.log('[webhook/uazapi] RAW BODY:', rawStr.slice(0, 2000));
+      try { body = JSON.parse(rawStr); } catch (_) { body = {}; }
 
-    if (body.event !== 'message') {
-      console.log('[webhook/uazapi] ignorando evento não-mensagem:', body.event);
-      return;
+      const eventField = body.event || body.type || body.msgtype || body.action || '';
+      console.log('[webhook/uazapi] event:', eventField, '| keys:', Object.keys(body).join(','));
+
+      const isMsgEvent = /^message|^msg|^chat|^text|ReceivedCallback/i.test(eventField)
+        || body.from || body.message || (body.data && (body.data.from || body.data.message));
+
+      if (!isMsgEvent) {
+        console.log('[webhook/uazapi] ignorando evento não-mensagem:', eventField);
+        return;
+      }
+
+      const data = body.data || body.message || body;
+
+      const rawFromMe = data.fromMe ?? data.from_me ?? body.fromMe ?? body.from_me;
+      if (rawFromMe === true) {
+        console.log('[webhook/uazapi] ignorando mensagem própria (fromMe)');
+        return;
+      }
+
+      const rawIsGroup = data.isGroup ?? data.is_group ?? body.isGroup ?? body.is_group;
+      if (rawIsGroup === true) {
+        console.log('[webhook/uazapi] ignorando mensagem de grupo');
+        return;
+      }
+
+      const rawFrom = data.from || data.remoteJid || data.key?.remoteJid || body.from || '';
+      const from = String(rawFrom).replace(/@s\.whatsapp\.net|@c\.us/g, '');
+      const telefone = normalizeTelefone(from);
+      if (!telefone) {
+        console.log('[webhook/uazapi] telefone inválido, from:', rawFrom);
+        return;
+      }
+
+      const texto = String(
+        data.body || data.text || data.message?.conversation ||
+        data.message?.extendedTextMessage?.text ||
+        body.body || body.text || ''
+      );
+      const whatsapp_message_id = data.id || data.key?.id || body.id || null;
+      const rawTs = data.timestamp || data.messageTimestamp || body.timestamp || null;
+      const ts = rawTs ? new Date(Number(rawTs) * 1000) : new Date();
+      const whatsapp_name = data.pushName || data.push_name || body.pushName || body.push_name || null;
+
+      console.log('[webhook/uazapi] processando mensagem de', telefone, ':', texto.slice(0, 100));
+      await handleIncoming({ telefone, texto, whatsapp_message_id, whatsapp_timestamp: ts, whatsapp_name });
+    } catch (e) {
+      logger.error('webhook/uazapi', e.message, { stack: e.stack });
     }
-
-    const data = body.data || {};
-
-    if (data.fromMe === true) {
-      console.log('[webhook/uazapi] ignorando mensagem própria (fromMe)');
-      return;
-    }
-
-    if (data.isGroup === true) {
-      console.log('[webhook/uazapi] ignorando mensagem de grupo');
-      return;
-    }
-
-    const from = String(data.from || '').replace('@s.whatsapp.net', '');
-    const telefone = normalizeTelefone(from);
-    if (!telefone) {
-      console.log('[webhook/uazapi] telefone inválido, from:', data.from);
-      return;
-    }
-
-    const texto = String(data.body || '');
-    const whatsapp_message_id = data.id || null;
-    const ts = data.timestamp ? new Date(Number(data.timestamp) * 1000) : new Date();
-    const whatsapp_name = data.pushName || null;
-
-    console.log('[webhook/uazapi] processando mensagem de', telefone, ':', texto);
-    await handleIncoming({ telefone, texto, whatsapp_message_id, whatsapp_timestamp: ts, whatsapp_name });
-  } catch (e) {
-    logger.error('webhook/uazapi', e.message, { stack: e.stack });
-  }
-});
+  });
 
 module.exports = { router, handleIncoming };
