@@ -25,7 +25,7 @@ const router = express.Router();
 
 function cookieFlags(extraFlags) {
   const secure = config.nodeEnv === 'production' ? '; Secure' : '';
-  return `HttpOnly; Path=/admin; SameSite=Lax${secure}${extraFlags || ''}`;
+  return `HttpOnly; Path=/; SameSite=Lax${secure}${extraFlags || ''}`;
 }
 
 router.post('/api/auth/login', express.json(), (req, res) => {
