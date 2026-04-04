@@ -4,7 +4,7 @@
 
 - **Backend**: Node.js/Express na porta 5000 (`npm start` → `src/index.js`)
 - **Banco**: PostgreSQL (via `DATABASE_URL`)
-- **WhatsApp**: Meta Cloud API (configurável via painel superadmin)
+- **WhatsApp**: UazAPI (padrão) ou Meta Cloud API — configurável via painel superadmin
 
 ## Painéis
 
@@ -26,8 +26,8 @@ src/
   processor/      — Máquina de estados do bot WhatsApp
   scheduler/      — Cron jobs de lembretes e retry
   utils/          — Formatadores, logger, validadores
-  webhook/        — Receptor de eventos WhatsApp
-  whatsapp/       — Client e templates de mensagem
+  webhook/        — Receptor de eventos WhatsApp (Meta e UazAPI)
+  whatsapp/       — Client (suporta Meta API e UazAPI)
   internal/       — Notificações internas
 scripts/
   migrations/     — Runner de migrações
@@ -37,6 +37,24 @@ scripts/
 
 - Runner: `node scripts/migrations/run.js`
 - Arquivo: `src/database/migrations/001_initial.sql`
+
+## Integração WhatsApp
+
+### UazAPI (padrão/recomendado)
+
+Configurar no painel superadmin:
+- **URL base**: e.g. `https://focus.uazapi.com`
+- **Instância**: nome da instância criada no UazAPI
+- **Token**: token da instância
+
+Webhook para configurar no painel UazAPI: `https://<domínio>/webhook/uazapi`
+
+### Meta Cloud API
+
+Configurar no painel superadmin (campos alternativos):
+- Phone Number ID, Access Token, Verify Token, App Secret
+
+Webhook: `https://<domínio>/webhook/whatsapp`
 
 ## Variáveis de Ambiente
 
@@ -50,6 +68,25 @@ scripts/
 
 Credenciais WhatsApp são configuradas pelo painel Superadmin e salvas no banco.
 
+## Chaves de configuração no banco (`configuracoes`)
+
+| Chave | Descrição |
+|-------|-----------|
+| `whatsapp_provider` | `uazapi` ou `meta` |
+| `uazapi_base_url` | URL base do servidor UazAPI |
+| `uazapi_instance` | Nome da instância UazAPI |
+| `uazapi_token` | Token da instância UazAPI (secret) |
+| `whatsapp_token` | Access Token da Meta API (secret) |
+| `whatsapp_phone_number_id` | Phone Number ID da Meta API |
+| `whatsapp_verify_token` | Verify Token do webhook Meta |
+| `whatsapp_app_secret` | App Secret da Meta API (secret) |
+| `empresa_nome` | Nome da empresa exibido no bot |
+| `empresa_telefone` | Telefone de contato |
+| `horarios` | JSON com horários de atendimento |
+| `msg_boas_vindas` | Mensagem de boas-vindas |
+| `msg_menu_sem_agendamento` | Menu principal sem agendamento |
+| `msg_menu_com_agendamento` | Menu com agendamento ativo |
+
 ## Workflows Replit
 
 | Workflow | Comando | Porta |
@@ -58,11 +95,7 @@ Credenciais WhatsApp são configuradas pelo painel Superadmin e salvas no banco.
 
 ## Fluxo do Bot
 
-1. Cliente envia mensagem → webhook `/webhook/whatsapp`
+1. Cliente envia mensagem → webhook `/webhook/uazapi` (UazAPI) ou `/webhook/whatsapp` (Meta)
 2. Processador analisa estado da sessão (`src/processor/`)
-3. Resposta enviada via WhatsApp Cloud API
+3. Resposta enviada via UazAPI ou Meta API (detectado automaticamente pelo provider configurado)
 4. Agendamentos gerenciados via `src/scheduler/`
-
-## GitHub
-
-Repositório: https://github.com/farollapi-cloud/automa-owhatsapp

@@ -146,4 +146,39 @@ async function handleIncoming({ telefone, texto, whatsapp_message_id, whatsapp_t
   });
 }
 
+router.post('/uazapi', express.json(), async (req, res) => {
+  res.sendStatus(200);
+  try {
+    const body = req.body;
+    if (body.event !== 'messages.received') return;
+
+    const data = body.data || {};
+    const key = data.key || {};
+
+    if (key.fromMe === true) return;
+
+    const remoteJid = key.remoteJid || '';
+    if (remoteJid.endsWith('@g.us')) return;
+
+    const telefone = normalizeTelefone(remoteJid.replace('@s.whatsapp.net', ''));
+    if (!telefone) return;
+
+    const msg = data.message || {};
+    const texto =
+      msg.conversation ||
+      msg.extendedTextMessage?.text ||
+      msg.imageMessage?.caption ||
+      msg.videoMessage?.caption ||
+      '';
+
+    const whatsapp_message_id = key.id || null;
+    const ts = data.messageTimestamp ? new Date(Number(data.messageTimestamp) * 1000) : new Date();
+    const whatsapp_name = data.pushName || null;
+
+    await handleIncoming({ telefone, texto, whatsapp_message_id, whatsapp_timestamp: ts, whatsapp_name });
+  } catch (e) {
+    logger.error('webhook/uazapi', e.message, { stack: e.stack });
+  }
+});
+
 module.exports = { router, handleIncoming };
