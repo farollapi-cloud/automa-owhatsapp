@@ -49,13 +49,13 @@ async function sendTextUazapi(to, text) {
   }
 
   const number = String(to).replace(/\D/g, '');
-  const url = `${baseUrl}/sendText`;
+  const url = `${baseUrl}/send/text`;
   console.log('[whatsapp/uazapi] enviando para', number, 'via', url);
 
   try {
     const res = await fetch(url, {
       method: 'POST',
-      headers: { Token: token, 'Content-Type': 'application/json' },
+      headers: { token, 'Content-Type': 'application/json' },
       body: JSON.stringify({ number, text }),
     });
     const json = await res.json().catch(() => ({}));
