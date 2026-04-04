@@ -4,6 +4,7 @@ const express = require('express');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const repos = require('../database/reposAgendamento');
+const { requireAdmin } = require('../admin/middleware/adminAuth');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -40,7 +41,7 @@ router.get('/config', async (req, res) => {
   }
 });
 
-router.post('/config', async (req, res) => {
+router.post('/config', requireAdmin, async (req, res) => {
   try {
     const body = req.body || {};
     const existing = await repos.getConfig();
@@ -141,7 +142,7 @@ router.get('/agendamentos', async (req, res) => {
   }
 });
 
-router.delete('/agendamentos/:id', async (req, res) => {
+router.delete('/agendamentos/:id', requireAdmin, async (req, res) => {
   try {
     const ok = await repos.deleteAgendamento(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Não encontrado' });
@@ -168,7 +169,7 @@ router.get('/servicos', async (req, res) => {
   }
 });
 
-router.post('/servicos', async (req, res) => {
+router.post('/servicos', requireAdmin, async (req, res) => {
   try {
     const { nome, categoria, preco, descricao } = req.body || {};
     const precoNum = typeof preco === 'number' ? preco : parseInt(String(preco), 10);
@@ -272,7 +273,7 @@ function parseDelimitedText(buf, sep) {
   return out;
 }
 
-router.post('/servicos/upload', upload.single('file'), async (req, res) => {
+router.post('/servicos/upload', requireAdmin, upload.single('file'), async (req, res) => {
   try {
     if (!req.file || !req.file.buffer) {
       return res.status(400).json({ criados: 0, erros: ['Arquivo ausente'] });
@@ -299,7 +300,7 @@ router.post('/servicos/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-router.delete('/servicos/:id', async (req, res) => {
+router.delete('/servicos/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'id inválido' });
