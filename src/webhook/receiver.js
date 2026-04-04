@@ -152,43 +152,36 @@ router.post('/uazapi', express.json(), async (req, res) => {
     const body = req.body;
     console.log('[webhook/uazapi] recebido event:', body.event, 'instance:', body.instance);
 
-    if (body.event !== 'messages.received') {
+    if (body.event !== 'message') {
       console.log('[webhook/uazapi] ignorando evento não-mensagem:', body.event);
       return;
     }
 
     const data = body.data || {};
-    const key = data.key || {};
 
-    if (key.fromMe === true) {
+    if (data.fromMe === true) {
       console.log('[webhook/uazapi] ignorando mensagem própria (fromMe)');
       return;
     }
 
-    const remoteJid = key.remoteJid || '';
-    if (remoteJid.endsWith('@g.us')) {
+    if (data.isGroup === true) {
       console.log('[webhook/uazapi] ignorando mensagem de grupo');
       return;
     }
 
-    const telefone = normalizeTelefone(remoteJid.replace('@s.whatsapp.net', ''));
+    const from = String(data.from || '').replace('@s.whatsapp.net', '');
+    const telefone = normalizeTelefone(from);
     if (!telefone) {
-      console.log('[webhook/uazapi] telefone inválido, remoteJid:', remoteJid);
+      console.log('[webhook/uazapi] telefone inválido, from:', data.from);
       return;
     }
 
-    const msg = data.message || {};
-    const texto =
-      msg.conversation ||
-      msg.extendedTextMessage?.text ||
-      msg.imageMessage?.caption ||
-      msg.videoMessage?.caption ||
-      '';
-
-    const whatsapp_message_id = key.id || null;
-    const ts = data.messageTimestamp ? new Date(Number(data.messageTimestamp) * 1000) : new Date();
+    const texto = String(data.body || '');
+    const whatsapp_message_id = data.id || null;
+    const ts = data.timestamp ? new Date(Number(data.timestamp) * 1000) : new Date();
     const whatsapp_name = data.pushName || null;
 
+    console.log('[webhook/uazapi] processando mensagem de', telefone, ':', texto);
     await handleIncoming({ telefone, texto, whatsapp_message_id, whatsapp_timestamp: ts, whatsapp_name });
   } catch (e) {
     logger.error('webhook/uazapi', e.message, { stack: e.stack });
