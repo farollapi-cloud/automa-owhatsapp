@@ -75,11 +75,11 @@
       </select>
 
       <div class="provider-fields" id="fields-uazapi">
-        <p class="muted">Configure sua instância em <strong>uazapi.dev</strong> e insira os dados abaixo.</p>
-        <label for="uazapi_base_url">URL base do servidor UazAPI</label>
-        <input type="url" id="uazapi_base_url" placeholder="Ex.: https://focus.uazapi.com" />
-        <label for="uazapi_instance">Nome da instância</label>
-        <input type="text" id="uazapi_instance" placeholder="Ex.: oficina-teteu" />
+        <p class="muted">No painel <strong>uazapi.dev</strong>, abra sua instância → clique em <strong>"Dados da instância"</strong> → copie a URL mostrada e cole no campo abaixo.</p>
+        <label for="uazapi_base_url">URL da instância UazAPI <span style="color:#71767b;font-weight:400;">(ex.: https://farollbr.uazapi.com)</span></label>
+        <input type="url" id="uazapi_base_url" placeholder="https://suainstancia.uazapi.com" />
+        <label for="uazapi_instance">Nome da instância <span style="color:#71767b;font-weight:400;">(opcional — deixe vazio para uazapi.dev)</span></label>
+        <input type="text" id="uazapi_instance" placeholder="Deixe vazio se usar uazapi.dev" />
         <label for="uazapi_token">Token da instância</label>
         <input type="password" id="uazapi_token" placeholder="Token gerado no painel UazAPI" autocomplete="new-password" />
         <button type="button" class="btn btn-test" id="btn-test-uazapi" onclick="testarUazapi()" style="margin-top:0.75rem;background:#2f3336;color:#e7e9ea;width:100%;padding:0.55rem;border-radius:6px;border:1px solid #2f3336;cursor:pointer;font-size:0.88rem;">🔌 Testar conexão com UazAPI</button>
@@ -321,7 +321,8 @@
           result.style.background = '#3a1a1a';
           result.style.color = '#f87171';
           result.style.border = '1px solid #991b1b';
-          result.textContent = '❌ Erro: ' + json.erro + (json.detalhe ? ' — ' + JSON.stringify(json.detalhe) : '');
+          const detalhe = json.detalhe ? ' — ' + JSON.stringify(json.detalhe) : (json.ultimo ? ' — último: ' + JSON.stringify(json.ultimo) : '');
+          result.textContent = '❌ Erro: ' + json.erro + detalhe;
         }
       } catch (e) {
         result.style.display = 'block';

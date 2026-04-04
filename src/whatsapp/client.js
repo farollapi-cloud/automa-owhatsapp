@@ -43,13 +43,13 @@ async function sendTextUazapi(to, text) {
   const instance = (await getDbConfig('uazapi_instance', '')) || '';
   const token = (await getDbConfig('uazapi_token', '')) || '';
 
-  if (!baseUrl || !instance || !token) {
-    console.error('[whatsapp/uazapi] CREDENCIAIS AUSENTES — base_url:', !!baseUrl, 'instance:', !!instance, 'token:', !!token);
+  if (!baseUrl || !token) {
+    console.error('[whatsapp/uazapi] CREDENCIAIS AUSENTES — base_url:', !!baseUrl, 'token:', !!token);
     return { ok: false, skipped: true };
   }
 
   const number = String(to).replace(/\D/g, '');
-  const url = `${baseUrl}/${instance}/sendText`;
+  const url = `${baseUrl}/sendText`;
   console.log('[whatsapp/uazapi] enviando para', number, 'via', url);
 
   try {

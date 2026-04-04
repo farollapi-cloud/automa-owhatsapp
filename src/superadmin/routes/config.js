@@ -81,11 +81,13 @@ router.post('/api/test-uazapi', express.json(), async (req, res) => {
     const instance = (await getDbConfig('uazapi_instance', '')) || '';
     const token = (await getDbConfig('uazapi_token', '')) || '';
 
-    if (!baseUrl || !instance || !token) {
-      return res.json({ ok: false, erro: 'Credenciais não configuradas (URL, instância ou token ausente)' });
+    if (!baseUrl || !token) {
+      return res.json({ ok: false, erro: 'Credenciais não configuradas (URL base ou token ausente)' });
     }
 
     const candidates = [
+      `${baseUrl}/connectionState`,
+      `${baseUrl}/instance/connectionState`,
       `${baseUrl}/instance/connectionState/${instance}`,
       `${baseUrl}/${instance}/connectionState`,
       `${baseUrl}/instancia/status`,
