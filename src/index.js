@@ -1,6 +1,12 @@
 'use strict';
 
 require('dotenv').config();
+
+if (process.env.ADMIN_PASSWORD && !process.env.ADMIN_SESSION_SECRET && !process.env.INTERNAL_NOTIFY_SECRET) {
+  console.error('ERRO: ADMIN_PASSWORD definido mas ADMIN_SESSION_SECRET (ou INTERNAL_NOTIFY_SECRET) está vazio. Defina a variável de ambiente antes de iniciar o servidor.');
+  process.exit(1);
+}
+
 const express = require('express');
 const cors = require('cors');
 const config = require('./config');

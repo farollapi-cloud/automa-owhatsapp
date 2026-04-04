@@ -23,6 +23,11 @@ function metaWebhookUrl() {
 
 const router = express.Router();
 
+function cookieFlags(extraFlags) {
+  const secure = config.nodeEnv === 'production' ? '; Secure' : '';
+  return `HttpOnly; Path=/admin; SameSite=Lax${secure}${extraFlags || ''}`;
+}
+
 router.post('/api/auth/login', express.json(), (req, res) => {
   if (!config.adminPassword) {
     return res.json({ ok: true, auth_required: false });
@@ -34,7 +39,7 @@ router.post('/api/auth/login', express.json(), (req, res) => {
   const exp = Date.now() + 7 * 24 * 60 * 60 * 1000;
   const token = signSessionExp(exp);
   const maxAge = 7 * 24 * 60 * 60;
-  res.setHeader('Set-Cookie', `admin_sess=${token}; HttpOnly; Path=/admin; SameSite=Lax; Max-Age=${maxAge}`);
+  res.setHeader('Set-Cookie', `admin_sess=${token}; ${cookieFlags(`; Max-Age=${maxAge}`)}`);
   res.json({ ok: true, auth_required: true });
 });
 
@@ -46,7 +51,7 @@ router.get('/api/auth/status', (req, res) => {
 });
 
 router.post('/api/auth/logout', (req, res) => {
-  res.setHeader('Set-Cookie', 'admin_sess=; HttpOnly; Path=/admin; SameSite=Lax; Max-Age=0');
+  res.setHeader('Set-Cookie', `admin_sess=; ${cookieFlags('; Max-Age=0')}`);
   res.json({ ok: true });
 });
 

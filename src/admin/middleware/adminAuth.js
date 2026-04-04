@@ -3,6 +3,10 @@
 const crypto = require('crypto');
 const config = require('../../config');
 
+function getSessionSecret() {
+  return config.adminSessionSecret || '';
+}
+
 function parseCookies(req) {
   const header = req.headers.cookie;
   if (!header) return {};
@@ -22,12 +26,13 @@ function parseCookies(req) {
 
 function verifySessionCookie(value) {
   if (!value || !config.adminPassword) return false;
+  const secret = getSessionSecret();
+  if (!secret) return false;
   const parts = String(value).split('.');
   if (parts.length !== 2) return false;
   const [expStr, sig] = parts;
   const exp = parseInt(expStr, 10);
   if (!Number.isFinite(exp) || Date.now() > exp) return false;
-  const secret = String(config.adminSessionSecret || 'dev-insecure');
   const expected = crypto.createHmac('sha256', secret).update(String(exp)).digest('hex');
   try {
     return crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
@@ -37,7 +42,8 @@ function verifySessionCookie(value) {
 }
 
 function signSessionExp(expMs) {
-  const secret = String(config.adminSessionSecret || 'dev-insecure');
+  const secret = getSessionSecret();
+  if (!secret) throw new Error('ADMIN_SESSION_SECRET não configurado');
   const payload = String(expMs);
   const sig = crypto.createHmac('sha256', secret).update(payload).digest('hex');
   return `${payload}.${sig}`;
