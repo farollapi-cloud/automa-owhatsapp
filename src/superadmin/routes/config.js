@@ -85,17 +85,31 @@ router.post('/api/test-uazapi', express.json(), async (req, res) => {
       return res.json({ ok: false, erro: 'Credenciais não configuradas (URL, instância ou token ausente)' });
     }
 
-    const url = `${baseUrl}/${instance}/connectionState`;
-    const r = await fetch(url, {
-      method: 'GET',
-      headers: { Token: token, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(8000),
-    });
-    const json = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      return res.json({ ok: false, erro: `HTTP ${r.status}`, detalhe: json });
+    const candidates = [
+      `${baseUrl}/instance/connectionState/${instance}`,
+      `${baseUrl}/${instance}/connectionState`,
+      `${baseUrl}/instancia/status`,
+    ];
+
+    let lastErr = null;
+    for (const url of candidates) {
+      try {
+        const r = await fetch(url, {
+          method: 'GET',
+          headers: { Token: token, 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(6000),
+        });
+        const json = await r.json().catch(() => ({}));
+        if (r.ok) return res.json({ ok: true, estado: json, url });
+        if (r.status !== 404) {
+          return res.json({ ok: false, erro: `HTTP ${r.status}`, detalhe: json, url });
+        }
+        lastErr = { status: r.status, json, url };
+      } catch (e) {
+        lastErr = { erro: e.message, url };
+      }
     }
-    return res.json({ ok: true, estado: json });
+    return res.json({ ok: false, erro: 'Nenhum endpoint respondeu. Verifique URL e instância.', ultimo: lastErr });
   } catch (e) {
     return res.json({ ok: false, erro: e.message });
   }

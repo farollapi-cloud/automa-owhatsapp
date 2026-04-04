@@ -48,15 +48,15 @@ async function sendTextUazapi(to, text) {
     return { ok: false, skipped: true };
   }
 
-  const phone = String(to).replace(/\D/g, '');
+  const number = String(to).replace(/\D/g, '');
   const url = `${baseUrl}/${instance}/sendText`;
-  console.log('[whatsapp/uazapi] enviando para', phone, 'via', url);
+  console.log('[whatsapp/uazapi] enviando para', number, 'via', url);
 
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: { Token: token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, body: text }),
+      body: JSON.stringify({ number, text }),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
